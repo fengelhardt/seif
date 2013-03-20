@@ -16,7 +16,7 @@ const int MAP_WIDTH = 1024;
 const int MAP_HEIGHT = 1024;
 const int NUM_LANDMARKS = 300;
 
-const double ROBOT_MAX_VEL = 30.0;
+const double ROBOT_MAX_VEL = 200.0;
 const double ROBOT_MAX_ROT = M_PI * 1;
 
 const double ODOM_VEL_SIGMA = 1.0;
