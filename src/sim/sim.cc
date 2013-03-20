@@ -13,7 +13,7 @@
 #include "World.h"
 #include "Robot.h"
 #include "Plot.h"
-#include "config.h"
+#include "../config.h"
 
 using namespace std;
 

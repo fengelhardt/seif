@@ -6,8 +6,8 @@
  */
 
 #include "Robot.h"
-#include "config.h"
-#include "util.h"
+#include "../config.h"
+#include "../util.h"
 #include <ctime>
 #include <unistd.h>
 

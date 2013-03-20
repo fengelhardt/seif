@@ -7,7 +7,7 @@
 
 #include "World.h"
 #include <cstdlib>
-#include "util.h"
+#include "../util.h"
 
 World::World(int numLandmarks, int width, int height)
 	: width(width),

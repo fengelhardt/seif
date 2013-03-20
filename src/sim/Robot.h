@@ -15,7 +15,7 @@
 #include "kdl/frames.hpp"
 #include <tf/tf.h>
 #include "World.h"
-#include "util.h"
+#include "../util.h"
 
 class Robot {
 public:
