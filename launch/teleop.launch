@@ -1,0 +1,14 @@
+<launch>
+	<!-- joy -->
+	<arg name="max_velocity" default="0.3" />
+	<node pkg="seif" type="joyteleop" name="joy_teleop">
+	</node>
+	<arg name="dev" default="/dev/input/js2" />
+	<node pkg="joy" type="joy_node" name="joy_node">
+	 	<param name="dev" value="$(arg dev)" type="string"/>
+	</node>
+	
+	<!-- sim -->
+	<node pkg="seif" type="sim" name="sim">
+	</node>
+ </launch>

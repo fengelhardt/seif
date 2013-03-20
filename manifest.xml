@@ -1,0 +1,20 @@
+<package>
+  <description brief="seif">
+
+     seif
+
+  </description>
+  <author>fengelha</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/</url>
+  <depend package="joy"/>
+  <depend package="nav_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="kdl"/>
+  <depend package="cv_bridge"/>
+</package>
+
+
