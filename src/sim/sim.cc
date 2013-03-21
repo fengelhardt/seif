@@ -1,25 +1,24 @@
 
-#define DEBUG 255
-
 #include <iostream>
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "nav_msgs/Odometry.h"
 #include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include <ctime>
 #include <unistd.h>
 
 #include "World.h"
 #include "Robot.h"
-#include "Plot.h"
 #include "../config.h"
 
 using namespace std;
+using namespace seif;
 
 geometry_msgs::Twist robot_ctrl;
 ros::Time currentTime;
 ros::NodeHandle* rosnode;
+
+// launchfile
 
 void twist_callback(const geometry_msgs::Twist& twist) {
 	ROS_INFO("ang: %3f %3f %3f lin: %3f %3f %3f",
@@ -48,20 +47,16 @@ int main(int argc, char** argv) {
 
 	ros::Subscriber sub = rosnode->subscribe("cmd_vel", 1, twist_callback);
 
-	Plot plot("Simulation", MAP_WIDTH, MAP_HEIGHT);
-
 	World world(NUM_LANDMARKS, MAP_WIDTH, MAP_HEIGHT);
 	Robot robot(MAP_WIDTH/2.0, MAP_HEIGHT/2.0);
 
-	bool run = true;
-	while(run) {
+	world.publish();
+
+	while(1) {
 		tick(robot, world);
-		plot.plot(world, robot);
-
 		ros::spinOnce();
-		int key = cv::waitKey(10) & 255;
-
-		if(key == 27) run = false;
+		struct timespec ts = {0., 1000000000/SIM_FREQ};
+		nanosleep(&ts, NULL);
 	}
 
 	return 0;

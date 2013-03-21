@@ -6,4 +6,6 @@
 bin/
 lib/
 build/
+msg_gen/
 .setings/
+*/_*.py

@@ -9,21 +9,29 @@
 #define WORLD_H_
 
 #include <list>
-#include <opencv/cv.hpp>
+#include "ros/ros.h"
+#include "seif/landmark.h"
+
+namespace seif {
 
 class World {
 public:
 	World(int numLandmarks, int width, int height);
 	virtual ~World();
 
-	std::list<cv::Vec2d>& getLandmarks() {
+	std::vector<landmark>& getLandmarks() {
 		return landmarks;
 	}
 
+	void publish();
+
 protected:
-	std::list<cv::Vec2d> landmarks;
+	std::vector<landmark> landmarks;
 	int width;
 	int height;
+	ros::Publisher worldPub;
+};
+
 };
 
 #endif /* WORLD_H_ */

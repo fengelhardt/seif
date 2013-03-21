@@ -38,7 +38,7 @@ void joyteleop::joyCallback(const sensor_msgs::Joy::ConstPtr& joy){
 	az=-joy->axes[0];
 	memset(&vel_cmd,0,sizeof(vel_cmd));
 	vel_cmd.linear.x  = lx;
-	vel_cmd.angular.z = az;
+	vel_cmd.angular.z = az * lx;
 	vel_pub.publish(vel_cmd);
 }
 

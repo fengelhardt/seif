@@ -16,6 +16,9 @@
 #include <tf/tf.h>
 #include "World.h"
 #include "../util.h"
+#include "seif/landmark.h"
+
+namespace seif {
 
 class Robot {
 public:
@@ -31,11 +34,15 @@ public:
 
 private:
 	KDL::Frame pose;
+	KDL::Frame odoPose;
 	Gaussian odoErrorRot;
 	Gaussian odoErrorVel;
 	Gaussian sensorErrorAng;
 	Gaussian sensorErrorDist;
 	ros::Publisher odomPub;
+	ros::Publisher posePub;
 };
+
+}
 
 #endif /* ROBOT_H_ */
