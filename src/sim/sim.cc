@@ -18,8 +18,6 @@ geometry_msgs::Twist robot_ctrl;
 ros::Time currentTime;
 ros::NodeHandle* rosnode;
 
-// launchfile
-
 void twist_callback(const geometry_msgs::Twist& twist) {
 	ROS_INFO("ang: %3f %3f %3f lin: %3f %3f %3f",
 			twist.angular.x,

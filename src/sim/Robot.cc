@@ -48,7 +48,7 @@ void Robot::sense(World& world) {
 		if(dist > SENSOR_RANGE) continue;
 		measurement m;
 		m.d = dist;
-		m.theta = atan2(l.x - pose.p.x(), l.y - pose.p.y());
+		m.theta = atan2(l.y - pose.p.y(), l.x - pose.p.x());
 		m.id = l.index;
 
 		// add measurement error

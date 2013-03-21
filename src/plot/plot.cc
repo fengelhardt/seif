@@ -71,6 +71,7 @@ void Plot::plot() {
 	for(;it != world.landmarks.end(); it++) {
 		cv::circle(canvas, cv::Point((int)(*it).x,(int)(*it).y), 1, cv::Scalar(64., 64., 255.));
 	}
+	cv::flip(canvas, canvas, 0);
 	cv::imshow(wndTitle, canvas);
 }
 
