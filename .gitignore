@@ -8,4 +8,4 @@ lib/
 build/
 msg_gen/
 .setings/
-*/_*.py
+*_*.py

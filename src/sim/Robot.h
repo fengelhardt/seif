@@ -41,6 +41,7 @@ private:
 	Gaussian sensorErrorDist;
 	ros::Publisher odomPub;
 	ros::Publisher posePub;
+	ros::Publisher scanPub;
 };
 
 }

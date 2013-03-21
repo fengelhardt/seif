@@ -32,9 +32,11 @@ public:
 	static void poseTruthCB(const nav_msgs::Odometry& poseTruth);
 	static void poseOdoCB(const nav_msgs::Odometry& poseOdo);
 	static void worldCB(const seif::world& world);
+	static void scanCB(const seif::scan& scan);
 
 private:
 	cv::Point* calcTriangle(nav_msgs::Odometry& pose);
+	void drawScanlines();
 
 	cv::Mat canvas;
 	std::string wndTitle;
@@ -43,10 +45,12 @@ private:
 	nav_msgs::Odometry poseTruth;
 	nav_msgs::Odometry poseOdo;
 	seif::world world;
+	seif::scan scan;
 
 	ros::Subscriber poseTruthSub;
 	ros::Subscriber poseOdomSub;
 	ros::Subscriber worldSub;
+	ros::Subscriber scanSub;
 };
 
 #endif /* PLOT_H_ */

@@ -11,6 +11,7 @@
 #include <ctime>
 #include <unistd.h>
 #include <kdl_conversions/kdl_msg.h>
+#include "seif/scan.h"
 
 using namespace seif;
 
@@ -28,6 +29,7 @@ Robot::Robot(double x, double y)
 	odoPose.p.y(y);
 	odomPub = rosnode->advertise<nav_msgs::Odometry>("odom", 10, true);
 	posePub = rosnode->advertise<nav_msgs::Odometry>("ground_truth", 10, true);
+	scanPub = rosnode->advertise<scan>("scan", 10, true);
 }
 
 Robot::~Robot() {
@@ -36,10 +38,28 @@ Robot::~Robot() {
 
 void Robot::sense(World& world) {
 	// choose landmarks in range
+	scan s;
+	s.timestamp = currentTime;
+	std::vector<landmark>::iterator it = world.getLandmarks().begin();
+	for(; it != world.getLandmarks().end(); it++) {
+		landmark& l = *it;
+		double dist =
+				sqrt(pow(l.x - pose.p.x(), 2) + pow(l.y - pose.p.y(), 2));
+		if(dist > SENSOR_RANGE) continue;
+		measurement m;
+		m.d = dist;
+		m.theta = atan2(l.x - pose.p.x(), l.y - pose.p.y());
+		m.id = l.index;
 
-	// add measurement error
+		// add measurement error
+		m.d += sensorErrorDist();
+		m.theta += sensorErrorAng();
+
+		s.measurements.push_back(m);
+	}
 
 	// publish measurement (to slam)
+	scanPub.publish(s);
 }
 
 void Robot::move(geometry_msgs::Twist& robot_ctrl) {

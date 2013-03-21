@@ -24,5 +24,6 @@ const double ODOM_ROT_SIGMA = M_PI * 0.1;
 
 const double SENSOR_DIST_SIGMA = 1.0;
 const double SENSOR_ANG_SIGMA  = M_PI * 0.1;
+const double SENSOR_RANGE = 96.0;
 
 #endif /* CONFIG_H_ */

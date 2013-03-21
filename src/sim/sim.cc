@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 
 	world.publish();
 
-	while(1) {
+	while(ros::ok()) {
 		tick(robot, world);
 		ros::spinOnce();
 		struct timespec ts = {0., 1000000000/SIM_FREQ};
