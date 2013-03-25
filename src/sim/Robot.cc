@@ -49,6 +49,7 @@ void Robot::sense(World& world) {
 		measurement m;
 		m.d = dist;
 		m.theta = atan2(l.y - pose.p.y(), l.x - pose.p.x());
+		m.theta -= pose.M.GetRot().z();
 		m.id = l.index;
 
 		// add measurement error
