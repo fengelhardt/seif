@@ -19,10 +19,11 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
+#include <image_transport/image_transport.h>
 
 class Plot {
 private:
-	Plot(std::string wndTitle, int width, int height);
+	Plot(int width, int height);
 public:
 	static Plot& instance();
 	virtual ~Plot();
@@ -32,25 +33,34 @@ public:
 	static void poseTruthCB(const nav_msgs::Odometry& poseTruth);
 	static void poseOdoCB(const nav_msgs::Odometry& poseOdo);
 	static void worldCB(const seif::world& world);
+	static void mapCB(const seif::world& map);
 	static void scanCB(const seif::scan& scan);
+	static void covCB(const sensor_msgs::ImageConstPtr& cov);
 
 private:
 	cv::Point* calcTriangle(nav_msgs::Odometry& pose);
 	void drawScanlines();
+	void drawUncertainty(seif::landmark& lm);
 
 	cv::Mat canvas;
-	std::string wndTitle;
+	cv::Mat covariance;
+	std::string mapWndTitle;
+	std::string covWndTitle;
 	ros::NodeHandle n;
+	image_transport::ImageTransport it;
 
 	nav_msgs::Odometry poseTruth;
 	nav_msgs::Odometry poseOdo;
 	seif::world world;
+	seif::world map;
 	seif::scan scan;
 
 	ros::Subscriber poseTruthSub;
 	ros::Subscriber poseOdomSub;
 	ros::Subscriber worldSub;
+	ros::Subscriber mapSub;
 	ros::Subscriber scanSub;
+	image_transport::Subscriber covSub;
 };
 
 #endif /* PLOT_H_ */

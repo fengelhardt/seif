@@ -3,26 +3,36 @@
 #include "seif/scan.h"
 #include "plot.h"
 #include <list>
+#include <opencv/cvwimage.h>
+#include "cv_bridge/cv_bridge.h"
 
 Plot& Plot::instance() {
-	static Plot inst("Simulation", MAP_WIDTH, MAP_HEIGHT);
+	static Plot inst(MAP_WIDTH, MAP_HEIGHT);
 	return inst;
 }
 
 // init opencv plot
-Plot::Plot(std::string wndTitle, int width, int height)
+Plot::Plot(int width, int height)
 	: canvas(height, width, CV_8UC3, cv::Scalar(0.)),
-	  wndTitle(wndTitle),
+	  covariance(1,1,CV_16UC1),
+	  mapWndTitle("Map"),
+	  covWndTitle("Covariance"),
+	  n(),
+	  it(n),
 	  poseTruthSub(n.subscribe("ground_truth", 1, Plot::poseTruthCB)),
 	  poseOdomSub(n.subscribe("odom", 1, Plot::poseOdoCB)),
 	  worldSub(n.subscribe("world", 1, Plot::worldCB)),
-	  scanSub(n.subscribe("scan", 1, Plot::scanCB)) {
-	cv::namedWindow(wndTitle);
+	  mapSub(n.subscribe("map", 1, Plot::mapCB)),
+	  scanSub(n.subscribe("scan", 1, Plot::scanCB)),
+	  covSub(it.subscribe("covariance", 1, Plot::covCB)) {
+	cv::namedWindow(mapWndTitle);
+	cv::namedWindow(covWndTitle);
 }
 
 // close opencv plot
 Plot::~Plot() {
-	cv::destroyWindow(wndTitle);
+	cv::destroyWindow(mapWndTitle);
+	cv::destroyWindow(covWndTitle);
 }
 
 cv::Point* Plot::calcTriangle(nav_msgs::Odometry& pose) {
@@ -59,6 +69,20 @@ void Plot::drawScanlines() {
 	}
 }
 
+void Plot::drawUncertainty(seif::landmark& lm) {
+	double s1 = lm.covariance[0];
+	double s2 = lm.covariance[3];
+	double cor = lm.covariance[1] / s1 / s2;
+	double alpha = 0.5 * atan(2*cor*s1*s2 / (s1*s1 - s2*s2));
+	alpha = s1 == s2 ? 0. : alpha;
+	double s = sin(alpha), c = cos(alpha);
+	double p1 = (1-cor*cor) / (c*c/s1/s1 - 2*cor*s*c/s1/s2 + s*s/s2/s2);
+	double p2 = (1-cor*cor) / (s*s/s1/s1 + 2*cor*s*c/s1/s2 + c*c/s2/s2);
+	cv::Point center((int)lm.x, (int)lm.y);
+	cv::Size axes((int)sqrt(p1), (int)sqrt(p2));
+	cv::ellipse(canvas, center, axes, alpha, 0., 360., cv::Scalar(128., 128., 128.));
+}
+
 // plot robot and world
 void Plot::plot() {
 	canvas.setTo(cv::Scalar(0., 0., 0.));
@@ -71,8 +95,13 @@ void Plot::plot() {
 	for(;it != world.landmarks.end(); it++) {
 		cv::circle(canvas, cv::Point((int)(*it).x,(int)(*it).y), 1, cv::Scalar(64., 64., 255.));
 	}
+	it = map.landmarks.begin();
+	for(;it != map.landmarks.end(); it++) {
+		drawUncertainty(*it);
+	}
 	cv::flip(canvas, canvas, 0);
-	cv::imshow(wndTitle, canvas);
+	cv::imshow(mapWndTitle, canvas);
+	cv::imshow(covWndTitle, covariance);
 }
 
 void Plot::scanCB(const seif::scan& scan) {
@@ -89,6 +118,14 @@ void Plot::poseOdoCB(const nav_msgs::Odometry& poseOdo) {
 
 void Plot::worldCB(const seif::world& world) {
 	Plot::instance().world = world;
+}
+
+void Plot::mapCB(const seif::world& map) {
+	Plot::instance().map = map;
+}
+
+void Plot::covCB(const sensor_msgs::ImageConstPtr& cov) {
+	Plot::instance().covariance = cv_bridge::toCvCopy(cov, "")->image;
 }
 
 int main(int argc, char** argv) {

@@ -9,6 +9,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
+set(ROS_BUILD_TYPE Debug)
+
 rosbuild_init()
 
 #set the default path for built executables to the "bin" directory
@@ -34,5 +36,5 @@ rosbuild_add_executable(sim src/sim/sim.cc src/sim/World.cc src/sim/Robot.cc)
 rosbuild_add_executable(seif src/seif/seif.cc src/seif/EKF.cc)
 rosbuild_add_executable(plot src/plot/plot.cc)
 target_link_libraries(sim opencv_core orocos-kdl kdl_conversions)
-target_link_libraries(plot opencv_core opencv_highgui orocos-kdl kdl_conversions)
+target_link_libraries(plot opencv_core opencv_highgui orocos-kdl kdl_conversions image_transport)
 target_link_libraries(seif opencv_core orocos-kdl kdl_conversions image_transport)
