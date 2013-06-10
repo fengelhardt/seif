@@ -37,15 +37,19 @@ public:
 	static void scanCB(const seif::scan& scan);
 	static void covCB(const sensor_msgs::ImageConstPtr& cov);
 
+    static void mouseEvent(int evt, int x, int y, int flags, void* param);
+
 private:
 	cv::Point* calcTriangle(nav_msgs::Odometry& pose);
 	void drawScanlines();
 	void drawUncertainty(seif::landmark& lm);
 
 	cv::Mat canvas;
+	cv::Mat covCanvas;
 	cv::Mat covariance;
 	std::string mapWndTitle;
 	std::string covWndTitle;
+	std::string covPointerText;
 	ros::NodeHandle n;
 	image_transport::ImageTransport it;
 

@@ -4,6 +4,7 @@
 #include "plot.h"
 #include <list>
 #include <opencv/cvwimage.h>
+#include <opencv/cv.hpp>
 #include "cv_bridge/cv_bridge.h"
 
 Plot& Plot::instance() {
@@ -14,9 +15,11 @@ Plot& Plot::instance() {
 // init opencv plot
 Plot::Plot(int width, int height)
 	: canvas(height, width, CV_8UC3, cv::Scalar(0.)),
-	  covariance(1,1,CV_16UC1),
+	  covCanvas(255,255,CV_64FC3),
+	  covariance(255,255,CV_64FC1),
 	  mapWndTitle("Map"),
 	  covWndTitle("Covariance"),
+	  covPointerText(""),
 	  n(),
 	  it(n),
 	  poseTruthSub(n.subscribe("ground_truth", 1, Plot::poseTruthCB)),
@@ -27,6 +30,7 @@ Plot::Plot(int width, int height)
 	  covSub(it.subscribe("covariance", 1, Plot::covCB)) {
 	cv::namedWindow(mapWndTitle);
 	cv::namedWindow(covWndTitle);
+	cv::setMouseCallback(covWndTitle, Plot::mouseEvent);
 }
 
 // close opencv plot
@@ -99,9 +103,29 @@ void Plot::plot() {
 	for(;it != map.landmarks.end(); it++) {
 		drawUncertainty(*it);
 	}
+	cv::putText(covCanvas, covPointerText, cv::Point(0, COVARIANCE_WIND_SIZE-8),
+					cv::FONT_HERSHEY_PLAIN, 0.75, cv::Scalar(0., 0., 255.));
+	ROS_INFO("c: %d", covCanvas.channels());
 	cv::flip(canvas, canvas, 0);
 	cv::imshow(mapWndTitle, canvas);
-	cv::imshow(covWndTitle, covariance);
+	cv::imshow(covWndTitle, covCanvas);
+}
+
+void Plot::mouseEvent(int evt, int x, int y, int flags, void* param) {
+	Plot& plot = Plot::instance();
+	if(evt == CV_EVENT_MOUSEMOVE) {
+		if(x >= COVARIANCE_WIND_SIZE || x < 0 || y >= COVARIANCE_WIND_SIZE || y <0)
+			plot.covPointerText = "";
+		else {
+			//y = COVARIANCE_WIND_SIZE - y;
+			x = (int)(x / COVARIANCE_WIND_SIZE * plot.covariance.cols);
+			y = (int)(y / COVARIANCE_WIND_SIZE * plot.covariance.rows);
+
+			std::stringstream sstr;
+			sstr << x << " " << y << " " << plot.covariance.at<double>(x,y);
+			plot.covPointerText = sstr.str();
+		}
+	}
 }
 
 void Plot::scanCB(const seif::scan& scan) {
@@ -126,10 +150,21 @@ void Plot::mapCB(const seif::world& map) {
 
 void Plot::covCB(const sensor_msgs::ImageConstPtr& cov) {
 	Plot::instance().covariance = cv_bridge::toCvCopy(cov, "")->image;
+	cv::resize(Plot::instance().covariance, Plot::instance().covCanvas,
+			cv::Size(COVARIANCE_WIND_SIZE, COVARIANCE_WIND_SIZE),
+			0, 0, cv::INTER_NEAREST);
+	double max, min;
+	cv::minMaxLoc(Plot::instance().covCanvas, &min, &max);
+	float alpha = (float) (255.0f/(max - min));
+	float beta = - min*alpha;
+	ROS_INFO("min %f max %f alp %f bet %f", min, max, alpha, beta);
+	Plot::instance().covCanvas.convertTo(Plot::instance().covCanvas, CV_32F, alpha, beta);
+	cv::cvtColor(Plot::instance().covCanvas, Plot::instance().covCanvas, CV_GRAY2RGB);
 }
 
 int main(int argc, char** argv) {
 	ros::init(argc, argv, "plot");
+	ROS_INFO("bla0");
 	Plot& plot = Plot::instance();
 	bool run = true;
 	while(run && ros::ok()) {

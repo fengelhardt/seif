@@ -52,12 +52,7 @@ int main(int argc, char** argv) {
 
 		seif::world world;
 		nav_msgs::Odometry pose;
-		cv::Mat u8;
-		slam.getSigma().convertTo(u8, CV_8UC1);
-		cv::resize(u8, u8,
-				cv::Size(COVARIANCE_WIND_SIZE, COVARIANCE_WIND_SIZE),
-				0, 0, cv::INTER_NEAREST);
-		cv_bridge::CvImage cov(std_msgs::Header(), "mono8", u8);
+		cv_bridge::CvImage cov(std_msgs::Header(), "64FC1", slam.getSigma());
 		seif::stateToWorld(slam, world);
 		seif::stateToOdometry(slam, pose);
 		mapPub.publish(world);
