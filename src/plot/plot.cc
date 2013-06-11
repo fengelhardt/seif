@@ -6,6 +6,7 @@
 #include <opencv/cvwimage.h>
 #include <opencv/cv.hpp>
 #include "cv_bridge/cv_bridge.h"
+#include <cmath>
 
 Plot& Plot::instance() {
 	static Plot inst(MAP_WIDTH, MAP_HEIGHT);
@@ -74,8 +75,8 @@ void Plot::drawScanlines() {
 }
 
 void Plot::drawUncertainty(seif::landmark& lm) {
-	double s1 = lm.covariance[0];
-	double s2 = lm.covariance[3];
+	double s1 = fmax(lm.covariance[0], 1.0);
+	double s2 = fmax(lm.covariance[3], 1.0);
 	double cor = lm.covariance[1] / s1 / s2;
 	double alpha = 0.5 * atan(2*cor*s1*s2 / (s1*s1 - s2*s2));
 	alpha = s1 == s2 ? 0. : alpha;
@@ -153,12 +154,12 @@ void Plot::covCB(const sensor_msgs::ImageConstPtr& cov) {
 	cv::resize(Plot::instance().covariance, Plot::instance().covCanvas,
 			cv::Size(COVARIANCE_WIND_SIZE, COVARIANCE_WIND_SIZE),
 			0, 0, cv::INTER_NEAREST);
+	Plot::instance().covCanvas = cv::abs(Plot::instance().covCanvas);
 	double max, min;
 	cv::minMaxLoc(Plot::instance().covCanvas, &min, &max);
-	float alpha = (float) (255.0f/(max - min));
-	float beta = - min*alpha;
-	ROS_INFO("min %f max %f alp %f bet %f", min, max, alpha, beta);
-	Plot::instance().covCanvas.convertTo(Plot::instance().covCanvas, CV_32F, alpha, beta);
+	double alpha = (255.0/(max - min));
+	ROS_INFO("min %f max %f alp %f", min, max, alpha);
+	Plot::instance().covCanvas.convertTo(Plot::instance().covCanvas, CV_32F, alpha, 0.0);
 	cv::cvtColor(Plot::instance().covCanvas, Plot::instance().covCanvas, CV_GRAY2RGB);
 }
 

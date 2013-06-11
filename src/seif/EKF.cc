@@ -6,6 +6,7 @@
  */
 
 #include "EKF.h"
+#include <ros/ros.h>
 
 namespace seif {
 
@@ -23,7 +24,7 @@ EKFSlam::EKFSlam(int numLandmarks, cv::Vec3d initialPose)
 	  sigmaTheta(0),
 	  numLandmarks(numLandmarks),
 	  stateMu(statedim(numLandmarks), 1, CV_64F),
-	  stateSigma(cv::Mat::eye(statedim(numLandmarks), statedim(numLandmarks), CV_64F)) {
+	  stateSigma(cv::Mat::zeros(statedim(numLandmarks), statedim(numLandmarks), CV_64F)) {
 	stateMu.at<double>(0) = initialPose[0];
 	stateMu.at<double>(1) = initialPose[1];
 	stateMu.at<double>(2) = initialPose[2];
@@ -41,7 +42,13 @@ void EKFSlam::aprioriUpdate(double deltaX, double deltaTheta) {
 	y += deltaX * sin(theta + deltaTheta);
 	theta += deltaTheta;
 	cv::Mat G = movementJacobi(deltaX, deltaTheta);
-	stateSigma = G.t() * stateSigma * G + sigmaOdom(deltaX, deltaTheta);
+//	ROS_INFO("a s33: %f", stateSigma.at<double>(2,2));
+//	ROS_INFO_STREAM("G: " << G);
+//	ROS_INFO_STREAM("S: " << stateSigma);
+	stateSigma = G * stateSigma * G.t();
+//	ROS_INFO("b s33: %f", stateSigma.at<double>(2,2));
+	stateSigma += sigmaOdom(deltaX, deltaTheta);
+//	ROS_INFO("c s33: %f", stateSigma.at<double>(2,2));
 }
 
 void EKFSlam::considerLandmark(int id, double d, double theta) {
@@ -60,8 +67,8 @@ void EKFSlam::setMeasurementError(double sigmaD, double sigmaTheta) {
 inline cv::Mat EKFSlam::movementJacobi(double deltaX, double deltaTheta) {
 	cv::Mat ret = cv::Mat::eye(statedim(numLandmarks), statedim(numLandmarks), CV_64F);
 	double theta = stateMu.at<double>(2);
-	ret.at<double>(2,0) = - sin(theta + deltaTheta);
-	ret.at<double>(2,0) = cos(theta + deltaTheta);
+	ret.at<double>(0,2) = - deltaX * sin(theta + deltaTheta);
+	ret.at<double>(1,2) = + deltaX * cos(theta + deltaTheta);
 	return ret;
 }
 

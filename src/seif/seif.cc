@@ -42,6 +42,11 @@ int main(int argc, char** argv) {
 	while(ros::ok()) {
 		slam.aprioriUpdate(lastOdom.twist.twist.linear.x, lastOdom.twist.twist.angular.z);
 
+		ROS_INFO("var_theta: %f, delta_x: %f, delta_theta %f",
+				slam.getSigma().at<double>(2,2),
+				lastOdom.twist.twist.linear.x,
+				lastOdom.twist.twist.angular.z);
+
 		std::vector<seif::measurement>::iterator it = lastScan.measurements.begin();
 		for(;it != lastScan.measurements.end(); it++) {
 			double d = it->d;
