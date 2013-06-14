@@ -11,6 +11,7 @@
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <execinfo.h>
+#include <cassert>
 #include "ros/ros.h"
 
 static void term_bt() {
@@ -19,6 +20,18 @@ static void term_bt() {
 	size = backtrace(a, 10);
 	backtrace_symbols_fd(a, 10, STDERR_FILENO);
 	abort();
+}
+
+// keep angle between -pi and pi
+static inline double angbnd(double theta) {
+	theta += M_PI;
+	int n = floor(theta/(2.*M_PI));
+	double x = theta - n*(2.*M_PI) - M_PI;
+	if(!(-M_PI <= x && M_PI >= x)) {
+		ROS_INFO("%f", x);
+		assert(false);
+	}
+	return x;
 }
 
 class Gaussian :

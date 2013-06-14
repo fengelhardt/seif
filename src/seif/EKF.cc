@@ -6,6 +6,7 @@
  */
 
 #include "EKF.h"
+#include "../util.h"
 #include <ros/ros.h>
 
 namespace seif {
@@ -41,6 +42,7 @@ void EKFSlam::aprioriUpdate(double deltaX, double deltaTheta) {
 	x += deltaX * cos(theta + deltaTheta);
 	y += deltaX * sin(theta + deltaTheta);
 	theta += deltaTheta;
+	theta = angbnd(theta);
 	cv::Mat G = movementJacobi(deltaX, deltaTheta);
 //	ROS_INFO("a s33: %f", stateSigma.at<double>(2,2));
 //	ROS_INFO_STREAM("G: " << G);
@@ -52,11 +54,13 @@ void EKFSlam::aprioriUpdate(double deltaX, double deltaTheta) {
 }
 
 void EKFSlam::considerLandmark(int id, double d, double theta) {
+	theta = angbnd(theta);
 	double& lmMuX = stateMu.at<double>(statedim(id)+0);
 	double& lmMuY = stateMu.at<double>(statedim(id)+1);
 	double& muX = stateMu.at<double>(0);
 	double& muY = stateMu.at<double>(1);
 	double& muTheta = stateMu.at<double>(2);
+	ROS_INFO("theta: %f muTheta: %f", theta, muTheta);
 	if(lmMuX == 0. && lmMuY == 0.) {
 		// Landmark never seen before
 		lmMuX = muX + d*cos(muTheta + theta);
@@ -67,8 +71,8 @@ void EKFSlam::considerLandmark(int id, double d, double theta) {
 	double q = pow(lmMuX-muX, 2) + pow(lmMuY-muY, 2);
 	double dEst = sqrt(q); // distance to lm according to model
 	double thetaEst
-		= atan2(lmMuY-muY, lmMuX-muX) - muTheta; // bearing of lm according to model
-	cv::Mat y = (cv::Mat_<double>(2,1) << d - dEst, theta-thetaEst); // innovation
+		= angbnd(atan2(lmMuY-muY, lmMuX-muX) - muTheta); // bearing of lm according to model
+	cv::Mat y = (cv::Mat_<double>(2,1) << d - dEst, angbnd(theta-thetaEst)); // innovation
 	cv::Mat Q = (cv::Mat_<double>(2,2) << sigmaD*sigmaD, 0., 0., sigmaTheta*sigmaTheta);
 	cv::Mat H = measurementJacobi(id, lmMuX - muX, lmMuY - muY, q);
 	cv::Mat S = H * stateSigma * H.t() + Q; // innovation covariance
@@ -89,8 +93,11 @@ void EKFSlam::considerLandmark(int id, double d, double theta) {
 	dbgout(lmMuY);
 	dbgout(K * y);
 	*/
+	ROS_INFO("theta: %f muTheta: %f", theta, muTheta);
 	stateMu += K * y;
 	stateSigma = (cv::Mat::eye(statedim(numLandmarks), statedim(numLandmarks), CV_64F) - K*H)*stateSigma;
+	ROS_INFO("theta: %f muTheta: %f", theta, muTheta);
+	muTheta = angbnd(muTheta);
 }
 
 void EKFSlam::setStateError(double sigmaV, double sigmaOmega) {
