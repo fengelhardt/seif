@@ -39,7 +39,7 @@ Robot::~Robot() {
 void Robot::sense(World& world) {
 	// choose landmarks in range
 	scan s;
-	s.timestamp = currentTime;
+	s.header.stamp = currentTime;
 	std::vector<landmark>::iterator it = world.getLandmarks().begin();
 	for(; it != world.getLandmarks().end(); it++) {
 		landmark& l = *it;
@@ -67,11 +67,11 @@ void Robot::move(geometry_msgs::Twist& robot_ctrl) {
 	KDL::Twist actual;
 	nav_msgs::Odometry odom;
 	tf::twistMsgToKDL(robot_ctrl, actual);
-	actual.vel.x(actual.vel.x() * ROBOT_MAX_VEL);
-	actual.rot.z(actual.rot.z() * ROBOT_MAX_ROT);
+	actual.vel.x(actual.vel.x() * ROBOT_MAX_VEL / SIM_FREQ);
+	actual.rot.z(actual.rot.z() * ROBOT_MAX_ROT / SIM_FREQ);
 
 	// change ground truth pose
-	pose.Integrate(actual, SIM_FREQ); // adapt to simulation timesteps
+	pose.Integrate(actual, 1.);
 
 	// publish ground truth
 	tf::twistKDLToMsg(actual, odom.twist.twist);
@@ -84,7 +84,7 @@ void Robot::move(geometry_msgs::Twist& robot_ctrl) {
 	// add error to odo pose
 	actual.vel.x(actual.vel.x() + odoErrorVel());
 	actual.rot.z(actual.rot.z() + odoErrorRot());
-	odoPose.Integrate(actual, SIM_FREQ);
+	odoPose.Integrate(actual, 1.);
 
 	// publish odo pose
 	tf::twistKDLToMsg(actual, odom.twist.twist);

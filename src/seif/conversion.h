@@ -13,6 +13,7 @@
 #include "nav_msgs/Odometry.h"
 #include "EKF.h"
 #include <ros/assert.h>
+#include <kdl/frames.hpp>
 
 namespace seif {
 
@@ -57,9 +58,13 @@ void stateToOdometry(EKFSlam& slam, nav_msgs::Odometry& pose) {
 	pose.pose.pose.position.x = stateMu.at<double>(0);
 	pose.pose.pose.position.y = stateMu.at<double>(1);
 	pose.pose.pose.position.z = 0.;
-	pose.pose.pose.orientation.x = 0.;
-	pose.pose.pose.orientation.y = 0.;
-	pose.pose.pose.orientation.z = stateMu.at<double>(2);
+	KDL::Rotation r = KDL::Rotation::RotZ(stateMu.at<double>(2));
+	r.GetQuaternion(
+			pose.pose.pose.orientation.x,
+			pose.pose.pose.orientation.y,
+			pose.pose.pose.orientation.z,
+			pose.pose.pose.orientation.w
+	);
 	pose.pose.covariance.fill(0.);
 	pose.pose.covariance[0] = stateSigma.at<double>(0,0);
 	pose.pose.covariance[1] = stateSigma.at<double>(0,1);

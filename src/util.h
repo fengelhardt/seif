@@ -10,7 +10,16 @@
 
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <execinfo.h>
 #include "ros/ros.h"
+
+static void term_bt() {
+	void* a[10];
+	size_t size;
+	size = backtrace(a, 10);
+	backtrace_symbols_fd(a, 10, STDERR_FILENO);
+	abort();
+}
 
 class Gaussian :
 		public boost::variate_generator<boost::mt19937, boost::normal_distribution<double> > {

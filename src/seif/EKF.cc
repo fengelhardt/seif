@@ -23,7 +23,7 @@ EKFSlam::EKFSlam(int numLandmarks, cv::Vec3d initialPose)
 	  sigmaD(0),
 	  sigmaTheta(0),
 	  numLandmarks(numLandmarks),
-	  stateMu(statedim(numLandmarks), 1, CV_64F),
+	  stateMu(cv::Mat::zeros(statedim(numLandmarks), 1, CV_64F)),
 	  stateSigma(cv::Mat::zeros(statedim(numLandmarks), statedim(numLandmarks), CV_64F)) {
 	stateMu.at<double>(0) = initialPose[0];
 	stateMu.at<double>(1) = initialPose[1];
@@ -52,11 +52,50 @@ void EKFSlam::aprioriUpdate(double deltaX, double deltaTheta) {
 }
 
 void EKFSlam::considerLandmark(int id, double d, double theta) {
+	double& lmMuX = stateMu.at<double>(statedim(id)+0);
+	double& lmMuY = stateMu.at<double>(statedim(id)+1);
+	double& muX = stateMu.at<double>(0);
+	double& muY = stateMu.at<double>(1);
+	double& muTheta = stateMu.at<double>(2);
+	if(lmMuX == 0. && lmMuY == 0.) {
+		// Landmark never seen before
+		lmMuX = muX + d*cos(muTheta + theta);
+		lmMuY = muY + d*sin(muTheta + theta);
+		stateSigma.at<double>(statedim(id)+0, statedim(id)+0) = 1000.0;
+		stateSigma.at<double>(statedim(id)+1, statedim(id)+1) = 1000.0;
+	}
+	double q = pow(lmMuX-muX, 2) + pow(lmMuY-muY, 2);
+	double dEst = sqrt(q); // distance to lm according to model
+	double thetaEst
+		= atan2(lmMuY-muY, lmMuX-muX) - muTheta; // bearing of lm according to model
+	cv::Mat y = (cv::Mat_<double>(2,1) << d - dEst, theta-thetaEst); // innovation
+	cv::Mat Q = (cv::Mat_<double>(2,2) << sigmaD*sigmaD, 0., 0., sigmaTheta*sigmaTheta);
+	cv::Mat H = measurementJacobi(id, lmMuX - muX, lmMuY - muY, q);
+	cv::Mat S = H * stateSigma * H.t() + Q; // innovation covariance
+	cv::Mat K = stateSigma * H.t() * S.inv(); // Kalman gain
+#define dbgout(m) ROS_INFO_STREAM(#m << ": " << m);
+	/*
+	dbgout(y);
+	dbgout(Q);
+	dbgout(H);
+	dbgout(S);
+	dbgout(K);
+	dbgout(q);
+	dbgout(dEst);
+	dbgout(thetaEst);
+	dbgout(muX);
+	dbgout(muY);
+	dbgout(lmMuX);
+	dbgout(lmMuY);
+	dbgout(K * y);
+	*/
+	stateMu += K * y;
+	stateSigma = (cv::Mat::eye(statedim(numLandmarks), statedim(numLandmarks), CV_64F) - K*H)*stateSigma;
 }
 
-void EKFSlam::setStateError(double sigmaV, double sigmaTheta) {
+void EKFSlam::setStateError(double sigmaV, double sigmaOmega) {
 	this->sigmaV = sigmaV;
-	this->sigmaTheta = sigmaTheta;
+	this->sigmaOmega = sigmaOmega;
 }
 
 void EKFSlam::setMeasurementError(double sigmaD, double sigmaTheta) {
@@ -86,10 +125,20 @@ inline cv::Mat EKFSlam::landmarkMask(int id) {
 	cv::Mat e2 = cv::Mat::eye(2,2, CV_64F);
 	cv::Mat e3 = cv::Mat::eye(3,3, CV_64F);
 	int j = statedim(id);
-	cv::Mat ret(6, statedim(numLandmarks), CV_64F);
+	cv::Mat ret = cv::Mat::zeros(5, statedim(numLandmarks), CV_64F);
 	e3.copyTo(ret(cv::Range(0,3), cv::Range(0,3)));
-	e3.copyTo(ret(cv::Range(3,6), cv::Range(j,j+2)));
+	e2.copyTo(ret(cv::Range(3,5), cv::Range(j,j+2)));
 	return ret;
+}
+
+inline cv::Mat EKFSlam::measurementJacobi(int id, double deltaX, double deltaY,
+		double q) {
+	double sq = sqrt(q);
+	cv::Mat Hi = (cv::Mat_<double>(2,5) <<
+			 -sq*deltaX, -sq*deltaY, 0., sq*deltaX, sq*deltaY,
+			     deltaY,    -deltaX, -q,   -deltaY,    deltaX
+		);
+	return 1/q * Hi * landmarkMask(id);
 }
 
 } /* namespace seif */

@@ -50,10 +50,15 @@ int main(int argc, char** argv) {
 
 	world.publish();
 
+	ros::Time t0 = ros::Time::now();
+	int i = 1;
 	while(ros::ok()) {
 		tick(robot, world);
 		ros::spinOnce();
-		struct timespec ts = {0., 1000000000/SIM_FREQ};
+		ros::Time ti = ros::Time::now();
+		ros::Time tn = t0 + ros::Duration(floorf((double)i/SIM_FREQ), i % SIM_FREQ * 1. / SIM_FREQ * 1000000000);
+		struct timespec ts = {(tn-ti).sec, (tn-ti).nsec};
+		i++;
 		nanosleep(&ts, NULL);
 	}
 

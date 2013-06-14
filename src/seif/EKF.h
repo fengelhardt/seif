@@ -39,6 +39,7 @@ private:
 	inline cv::Mat movementJacobi(double deltaX, double deltaTheta); // G_t
 	inline cv::Mat sigmaOdom(double deltaX, double deltaTheta); // R_t
 	inline cv::Mat landmarkMask(int id); // F_xj
+	inline cv::Mat measurementJacobi(int id, double deltaX, double deltaY, double q); // H_t
 
 	cv::Mat stateMu;
 	cv::Mat stateSigma;
