@@ -83,21 +83,15 @@ void Plot::drawUncertainty(seif::landmark& lm) {
 	cor = fmin(fmax(cor,1.),-1.); // bad hack...
 	double alpha = 0.5 * atan(2*cor*s1*s2 / (s1*s1 - s2*s2));
 	alpha = (s1 == s2) ? 0. : alpha;
-	/*
-	double s = sin(alpha), c = cos(alpha);
-	double p1 = (1-cor*cor) / (c*c/s1/s1 - 2*cor*s*c/s1/s2 + s*s/s2/s2);
-	double p2 = (1-cor*cor) / (s*s/s1/s1 + 2*cor*s*c/s1/s2 + c*c/s2/s2);
-	*/
 	cv::Mat c = (cv::Mat_<double>(2,2) << s1, lm.covariance[1], lm.covariance[1], s2);
 	cv::Mat e;
-	if(cv::eigen(c.inv(),e)) {
-		double p1 = fabs(e.at<double>(0));
-		double p2 = fabs(e.at<double>(1));
-		p1 = isnan(p1) ? 5.0 : p1;
-		p2 = isnan(p2) ? 5.0 : p2;
-		//ROS_INFO("%f %f %f  %f  %f %f",s1,s2,cor,alpha,p1,p2);
+	if(cv::eigen(c,e)) {
+		double p1 = sqrt(fabs(e.at<double>(0))) * 2.4477; // scale to 95% confidence
+		double p2 = sqrt(fabs(e.at<double>(1))) * 2.4477; // also a bad hack...
+		p1 = isnan(p1) ? 1.0 : p1;
+		p2 = isnan(p2) ? 1.0 : p2;
 		cv::Point center((int)lm.x, (int)lm.y);
-		cv::Size axes((int)p1, (int)p2);
+		cv::Size axes((int)fmax(p1,p2), (int)fmin(p1,p2));
 		cv::ellipse(canvas, center, axes, alpha, 0., 360., cv::Scalar(128., 128., 128.));
 	}
 }
@@ -117,7 +111,7 @@ void Plot::plot() {
 	}
 	it = map.landmarks.begin();
 	for(;it != map.landmarks.end(); it++) {
-		drawUncertainty(*it);
+		if(it->x != 0.0 || it->y != 0.0) drawUncertainty(*it);
 	}
 	cv::putText(covCanvas, covPointerText, cv::Point(0, COVARIANCE_WIND_SIZE-8),
 					cv::FONT_HERSHEY_PLAIN, 0.75, cv::Scalar(0., 0., 255.));
