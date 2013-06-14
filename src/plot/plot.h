@@ -32,6 +32,7 @@ public:
 
 	static void poseTruthCB(const nav_msgs::Odometry& poseTruth);
 	static void poseOdoCB(const nav_msgs::Odometry& poseOdo);
+	static void poseSlamCB(const nav_msgs::Odometry& poseSlam);
 	static void worldCB(const seif::world& world);
 	static void mapCB(const seif::world& map);
 	static void scanCB(const seif::scan& scan);
@@ -55,12 +56,14 @@ private:
 
 	nav_msgs::Odometry poseTruth;
 	nav_msgs::Odometry poseOdo;
+	nav_msgs::Odometry poseSlam;
 	seif::world world;
 	seif::world map;
 	seif::scan scan;
 
 	ros::Subscriber poseTruthSub;
 	ros::Subscriber poseOdomSub;
+	ros::Subscriber poseSlamSub;
 	ros::Subscriber worldSub;
 	ros::Subscriber mapSub;
 	ros::Subscriber scanSub;
